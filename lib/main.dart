@@ -20,6 +20,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String url = 'ws://192.168.1.155:8888';
+    // String url = 'ws://05ca9f993aa3.ngrok-free.app';
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(title: const Text('Live Streaming Demo')),
@@ -29,13 +30,6 @@ class MainApp extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ElevatedButton(
-                //   onPressed: () {
-                //     Navigator.of(context).push(MaterialPageRoute(
-                //         builder: (_) => const LiveStreamDemo()));
-                //   },
-                //   child: const Text('Upload Segments Demo'),
-                // ),
                 const SizedBox(height: 12),
                 ElevatedButton(
                   onPressed: () {
@@ -52,8 +46,6 @@ class MainApp extends StatelessWidget {
                   },
                   child: const Text('Watch Live'),
                 ),
-                const SizedBox(height: 20),
-                const Expanded(child: SizedBox()),
               ],
             ),
           ),

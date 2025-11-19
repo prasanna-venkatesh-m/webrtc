@@ -103,11 +103,11 @@ class _MobileBReceiveScreenState extends State<MobileBReceiveScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Mobile B — Receive Stream")),
+      appBar: AppBar(title: const Text("Watch Live")),
       body: Center(
         child: _remoteRenderer.srcObject != null
             ? RTCVideoView(_remoteRenderer)
-            : const Text("Waiting for stream..."),
+            : const Text("Waiting for live..."),
       ),
     );
   }

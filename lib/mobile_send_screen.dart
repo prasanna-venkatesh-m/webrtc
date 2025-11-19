@@ -18,6 +18,7 @@ class _MobileASendScreenState extends State<MobileASendScreen> {
   MediaStream? _localStream;
   late Signaling signaling;
   final _logs = <String>[];
+  bool isStarted = false;
 
   @override
   void initState() {
@@ -71,8 +72,18 @@ class _MobileASendScreenState extends State<MobileASendScreen> {
   }
 
   Future<void> _start() async {
+    setState(() {
+      isStarted = true;
+    });
     await _startLocalStream();
     await _createPeerAndSendOffer();
+  }
+
+  Future<void> _stop() async {
+    setState(() {
+      isStarted = false;
+    });
+    Navigator.pop(context);
   }
 
   Future<void> _startLocalStream() async {
@@ -117,7 +128,7 @@ class _MobileASendScreenState extends State<MobileASendScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Mobile A — Send Stream")),
+      appBar: AppBar(title: const Text("Stream Live")),
       body: Column(
         children: [
           Expanded(
@@ -126,16 +137,23 @@ class _MobileASendScreenState extends State<MobileASendScreen> {
               child: RTCVideoView(_localRenderer, mirror: true),
             ),
           ),
-          ElevatedButton(onPressed: _start, child: const Text("Start")),
+          Visibility(
+              visible: !isStarted,
+              child: ElevatedButton(
+                  onPressed: _start, child: const Text("Start"))),
+          Visibility(
+              visible: isStarted,
+              child:
+                  ElevatedButton(onPressed: _stop, child: const Text("Stop"))),
           const SizedBox(height: 12),
-          const Text("Logs:"),
-          Expanded(
-            child: ListView.builder(
-              reverse: true,
-              itemCount: _logs.length,
-              itemBuilder: (_, i) => Text(_logs[i]),
-            ),
-          ),
+          // const Text("Logs:"),
+          // Expanded(
+          //   child: ListView.builder(
+          //     reverse: true,
+          //     itemCount: _logs.length,
+          //     itemBuilder: (_, i) => Text(_logs[i]),
+          //   ),
+          // ),
         ],
       ),
     );
