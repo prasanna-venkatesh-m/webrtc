@@ -11,6 +11,7 @@ import 'mobile_capture_screen.dart';
 void main() {
   runApp(MaterialApp(
     home: MainApp(),
+    debugShowCheckedModeBanner: false,
   ));
 }
 
