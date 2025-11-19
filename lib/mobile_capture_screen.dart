@@ -54,8 +54,15 @@ class _MobileBReceiveScreenState extends State<MobileBReceiveScreen> {
       }
     };
 
-    _peerConnection!.onIceConnectionState =
-        (state) => print("🔥 ICE state = $state");
+    _peerConnection!.onIceConnectionState = (state) {
+      print("🔥 ICE state = $state");
+
+      if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
+          state == RTCIceConnectionState.RTCIceConnectionStateFailed ||
+          state == RTCIceConnectionState.RTCIceConnectionStateClosed) {
+        Navigator.pop(context);
+      }
+    };
   }
 
   void _listenSignaling() {
