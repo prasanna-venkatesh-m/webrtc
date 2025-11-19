@@ -8,10 +8,6 @@ class Signaling {
 
   Signaling(String url, String roomId) {
     _channel = WebSocketChannel.connect(Uri.parse(url));
-    _channel.sink.add(jsonEncode({
-      'type': 'join',
-      'room': roomId,
-    }));
 
     // Make stream broadcast
     _broadcastStream = _channel.stream.asBroadcastStream();

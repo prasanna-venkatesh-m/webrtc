@@ -47,7 +47,9 @@ class MainApp extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => MobileBReceiveScreen()));
+                        builder: (_) => MobileBReceiveScreen(
+                            // socketUrl: "ws://192.168.1.155:8888",
+                            )));
                   },
                   child: const Text('Mobile B - Receive (WebRTC)'),
                 ),
