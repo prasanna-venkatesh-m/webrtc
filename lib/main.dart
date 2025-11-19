@@ -19,44 +19,41 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String url = 'ws://192.168.1.155:8888';
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Live Streaming / WebRTC Demo')),
+        appBar: AppBar(title: const Text('Live Streaming Demo')),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // ElevatedButton(
+                //   onPressed: () {
+                //     Navigator.of(context).push(MaterialPageRoute(
+                //         builder: (_) => const LiveStreamDemo()));
+                //   },
+                //   child: const Text('Upload Segments Demo'),
+                // ),
+                const SizedBox(height: 12),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const LiveStreamDemo()));
+                        builder: (_) => MobileASendScreen(url: url)));
                   },
-                  child: const Text('Upload Segments Demo'),
+                  child: const Text('Stream Live'),
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const MobileASendScreen()));
+                        builder: (_) => MobileBReceiveScreen(url: url)));
                   },
-                  child: const Text('Mobile A - Send (WebRTC)'),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => MobileBReceiveScreen(
-                            // socketUrl: "ws://192.168.1.155:8888",
-                            )));
-                  },
-                  child: const Text('Mobile B - Receive (WebRTC)'),
+                  child: const Text('Watch Live'),
                 ),
                 const SizedBox(height: 20),
                 const Expanded(child: SizedBox()),
-                const Text(
-                    'Open one device as Mobile A (Send) and another as Mobile B (Receive).'),
               ],
             ),
           ),

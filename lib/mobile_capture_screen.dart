@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'signaling.dart';
 
 class MobileBReceiveScreen extends StatefulWidget {
-  const MobileBReceiveScreen({Key? key}) : super(key: key);
+  final String url;
+  const MobileBReceiveScreen({Key? key, required this.url}) : super(key: key);
 
   @override
   State<MobileBReceiveScreen> createState() => _MobileBReceiveScreenState();
@@ -25,7 +27,7 @@ class _MobileBReceiveScreenState extends State<MobileBReceiveScreen> {
     _remoteRenderer = RTCVideoRenderer();
     await _remoteRenderer.initialize();
 
-    signaling = Signaling('ws://192.168.1.155:8888', 'room1');
+    signaling = Signaling(widget.url, 'room1');
 
     await _createPeerConnection();
     _listenSignaling();
@@ -46,31 +48,54 @@ class _MobileBReceiveScreenState extends State<MobileBReceiveScreen> {
       }
     };
 
-    // _peerConnection!.onIceCandidate = (candidate) {
-    //   if (candidate != null) signaling.sendIceCandidate(candidate);
-    // };
-
-    _peerConnection!.onIceConnectionState = (state) {
-      print("🔥 ICE state = $state");
+    _peerConnection!.onIceCandidate = (candidate) {
+      if (candidate.candidate != null) {
+        signaling.sendIceCandidate(candidate);
+      }
     };
+
+    _peerConnection!.onIceConnectionState =
+        (state) => print("🔥 ICE state = $state");
   }
 
   void _listenSignaling() {
     signaling.messages.listen((msg) async {
-      final data = jsonDecode(msg);
+      String messageStr;
+      if (msg is String) {
+        messageStr = msg;
+      } else if (msg is Uint8List) {
+        messageStr = String.fromCharCodes(msg);
+      } else {
+        print('❌ Unknown message type: ${msg.runtimeType}');
+        return;
+      }
+
+      final data = jsonDecode(messageStr);
       switch (data['type']) {
         case 'offer':
+          print('📩 OFFER received');
           await _peerConnection!.setRemoteDescription(
               RTCSessionDescription(data['sdp'], 'offer'));
           final answer = await _peerConnection!.createAnswer();
           await _peerConnection!.setLocalDescription(answer);
           signaling.sendAnswer(answer);
+          print('📤 ANSWER sent');
+          break;
+
+        case 'answer':
+          print('📩 ANSWER received');
+          await _peerConnection!.setRemoteDescription(
+              RTCSessionDescription(data['sdp'], 'answer'));
           break;
 
         case 'candidate':
+          print('💡 ICE candidate received');
           await _peerConnection!.addCandidate(RTCIceCandidate(
               data['candidate'], data['sdpMid'], data['sdpMLineIndex']));
           break;
+
+        default:
+          print('⚠️ Unknown signaling type: ${data['type']}');
       }
     });
   }

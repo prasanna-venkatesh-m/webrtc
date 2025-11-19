@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'signaling.dart';
 
 class MobileASendScreen extends StatefulWidget {
-  const MobileASendScreen({Key? key}) : super(key: key);
+  final String url;
+  const MobileASendScreen({Key? key, required this.url}) : super(key: key);
 
   @override
   State<MobileASendScreen> createState() => _MobileASendScreenState();
@@ -26,11 +28,21 @@ class _MobileASendScreenState extends State<MobileASendScreen> {
   Future<void> _init() async {
     await _localRenderer.initialize();
 
-    signaling = Signaling('ws://192.168.1.155:8888', 'room1');
+    signaling = Signaling(widget.url, 'room1');
 
     // Listen for ANSWER and remote ICE
     signaling.messages.listen((message) async {
-      final data = jsonDecode(message);
+      String messageStr;
+      if (message is String) {
+        messageStr = message;
+      } else if (message is Uint8List) {
+        messageStr = String.fromCharCodes(message);
+      } else {
+        print('❌ Unknown message type: ${message.runtimeType}');
+        return;
+      }
+
+      final data = jsonDecode(messageStr);
       switch (data['type']) {
         case 'answer':
           _log('📥 Received ANSWER');
@@ -46,6 +58,9 @@ class _MobileASendScreenState extends State<MobileASendScreen> {
             data['sdpMLineIndex'],
           ));
           break;
+
+        default:
+          print('⚠️ Unknown signaling type: ${data['type']}');
       }
     });
   }
@@ -78,17 +93,20 @@ class _MobileASendScreenState extends State<MobileASendScreen> {
       ]
     });
 
-    _peerConnection!.onIceCandidate = (candidate) {
-      if (candidate.candidate != null) signaling.sendIceCandidate(candidate);
-    };
-
-    _peerConnection!.onIceConnectionState =
-        (state) => _log("🔥 ICE State: $state");
-
     // Add local tracks
     _localStream?.getTracks().forEach((track) {
       _peerConnection!.addTrack(track, _localStream!);
     });
+
+    // Handle ICE candidates
+    _peerConnection!.onIceCandidate = (candidate) {
+      if (candidate.candidate != null) {
+        signaling.sendIceCandidate(candidate);
+      }
+    };
+
+    _peerConnection!.onIceConnectionState =
+        (state) => _log("🔥 ICE State: $state");
 
     final offer = await _peerConnection!.createOffer();
     await _peerConnection!.setLocalDescription(offer);
