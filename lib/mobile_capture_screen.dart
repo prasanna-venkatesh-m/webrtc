@@ -42,6 +42,15 @@ class _MobileBReceiveScreenState extends State<MobileBReceiveScreen> {
       ]
     });
 
+    await _peerConnection!.addTransceiver(
+      kind: RTCRtpMediaType.RTCRtpMediaTypeVideo,
+      init: RTCRtpTransceiverInit(direction: TransceiverDirection.RecvOnly),
+    );
+    await _peerConnection!.addTransceiver(
+      kind: RTCRtpMediaType.RTCRtpMediaTypeAudio,
+      init: RTCRtpTransceiverInit(direction: TransceiverDirection.RecvOnly),
+    );
+
     _peerConnection!.onTrack = (event) {
       if (event.streams.isNotEmpty) {
         setState(() => _remoteRenderer.srcObject = event.streams[0]);
@@ -56,6 +65,8 @@ class _MobileBReceiveScreenState extends State<MobileBReceiveScreen> {
 
     _peerConnection!.onIceConnectionState = (state) {
       print("🔥 ICE state = $state");
+
+      if (!mounted) return;
 
       if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
           state == RTCIceConnectionState.RTCIceConnectionStateFailed ||
