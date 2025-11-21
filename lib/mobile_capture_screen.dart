@@ -13,128 +13,103 @@ class MobileBReceiveScreen extends StatefulWidget {
 }
 
 class _MobileBReceiveScreenState extends State<MobileBReceiveScreen> {
-  late RTCVideoRenderer _remoteRenderer;
-  RTCPeerConnection? _peerConnection;
+  final RTCVideoRenderer _renderer = RTCVideoRenderer();
   late Signaling signaling;
+  RTCPeerConnection? pc;
+  String? senderId;
 
   @override
   void initState() {
     super.initState();
-    _initialize();
+    _init();
   }
 
-  Future<void> _initialize() async {
-    _remoteRenderer = RTCVideoRenderer();
-    await _remoteRenderer.initialize();
-
+  Future<void> _init() async {
+    await _renderer.initialize();
     signaling = Signaling(widget.url, 'room1');
-
-    await _createPeerConnection();
-    _listenSignaling();
+    await _createPC();
+    _listen();
   }
 
-  Future<void> _createPeerConnection() async {
-    _peerConnection = await createPeerConnection({
+  Future<void> _createPC() async {
+    pc = await createPeerConnection({
       'iceServers': [
-        {
-          'urls': ['stun:stun.l.google.com:19302']
-        }
+        {'urls': 'stun:stun.l.google.com:19302'}
       ]
     });
 
-    await _peerConnection!.addTransceiver(
+    // Receive-only
+    await pc!.addTransceiver(
       kind: RTCRtpMediaType.RTCRtpMediaTypeVideo,
       init: RTCRtpTransceiverInit(direction: TransceiverDirection.RecvOnly),
     );
-    await _peerConnection!.addTransceiver(
+    await pc!.addTransceiver(
       kind: RTCRtpMediaType.RTCRtpMediaTypeAudio,
       init: RTCRtpTransceiverInit(direction: TransceiverDirection.RecvOnly),
     );
 
-    _peerConnection!.onTrack = (event) {
+    pc!.onTrack = (event) {
       if (event.streams.isNotEmpty) {
-        setState(() => _remoteRenderer.srcObject = event.streams[0]);
-      }
-    };
-
-    _peerConnection!.onIceCandidate = (candidate) {
-      if (candidate.candidate != null) {
-        signaling.sendIceCandidate(candidate);
-      }
-    };
-
-    _peerConnection!.onIceConnectionState = (state) {
-      print("🔥 ICE state = $state");
-
-      if (!mounted) return;
-
-      if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
-          state == RTCIceConnectionState.RTCIceConnectionStateFailed ||
-          state == RTCIceConnectionState.RTCIceConnectionStateClosed) {
-        Navigator.pop(context);
+        setState(() => _renderer.srcObject = event.streams[0]);
       }
     };
   }
 
-  void _listenSignaling() {
-    signaling.messages.listen((msg) async {
-      String messageStr;
-      if (msg is String) {
-        messageStr = msg;
-      } else if (msg is Uint8List) {
-        messageStr = String.fromCharCodes(msg);
-      } else {
-        print('❌ Unknown message type: ${msg.runtimeType}');
-        return;
-      }
+  void _listen() {
+    signaling.messages.listen((m) async {
+      String msg = _decode(m);
+      final data = jsonDecode(msg);
 
-      final data = jsonDecode(messageStr);
       switch (data['type']) {
         case 'offer':
-          print('📩 OFFER received');
-          await _peerConnection!.setRemoteDescription(
-              RTCSessionDescription(data['sdp'], 'offer'));
-          final answer = await _peerConnection!.createAnswer();
-          await _peerConnection!.setLocalDescription(answer);
-          signaling.sendAnswer(answer);
-          print('📤 ANSWER sent');
-          break;
+          senderId = data['from'];
 
-        case 'answer':
-          print('📩 ANSWER received');
-          await _peerConnection!.setRemoteDescription(
-              RTCSessionDescription(data['sdp'], 'answer'));
+          await pc!.setRemoteDescription(
+            RTCSessionDescription(data['sdp'], 'offer'),
+          );
+
+          final answer = await pc!.createAnswer();
+          await pc!.setLocalDescription(answer);
+
+          signaling.sendAnswer(answer, senderId!);
           break;
 
         case 'candidate':
-          print('💡 ICE candidate received');
-          await _peerConnection!.addCandidate(RTCIceCandidate(
-              data['candidate'], data['sdpMid'], data['sdpMLineIndex']));
+          await pc!.addCandidate(
+            RTCIceCandidate(
+              data['candidate'],
+              data['sdpMid'],
+              data['sdpMLineIndex'],
+            ),
+          );
           break;
-
-        default:
-          print('⚠️ Unknown signaling type: ${data['type']}');
       }
     });
+  }
+
+  String _decode(dynamic m) {
+    if (m is String) return m;
+    if (m is Uint8List) return utf8.decode(m);
+    return "";
+  }
+
+  @override
+  void dispose() {
+    pc?.close();
+    _renderer.dispose();
+    signaling.close();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Watch Live")),
+      appBar: AppBar(title: Text("Viewer")),
       body: Center(
-        child: _remoteRenderer.srcObject != null
-            ? RTCVideoView(_remoteRenderer)
-            : const Text("Waiting for live..."),
+        child: _renderer.srcObject != null
+            ? RTCVideoView(_renderer)
+            : Text("Waiting for stream..."),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _peerConnection?.close();
-    _remoteRenderer.dispose();
-    signaling.close();
-    super.dispose();
   }
 }

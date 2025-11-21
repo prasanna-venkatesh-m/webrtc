@@ -5,6 +5,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 class Signaling {
   final String url;
   final String room;
+
   late WebSocketChannel _channel;
 
   Signaling(this.url, this.room) {
@@ -14,34 +15,35 @@ class Signaling {
 
   Stream get messages => _channel.stream;
 
-  void sendOffer(RTCSessionDescription offer) {
-    _sendMessage({
+  void sendOffer(RTCSessionDescription offer, String viewerId) {
+    _send({
       'type': 'offer',
+      'to': viewerId,
       'sdp': offer.sdp,
     });
   }
 
-  void sendAnswer(RTCSessionDescription answer) {
-    _sendMessage({
+  void sendAnswer(RTCSessionDescription answer, String to) {
+    _send({
       'type': 'answer',
+      'to': to,
       'sdp': answer.sdp,
     });
   }
 
-  void sendIceCandidate(RTCIceCandidate candidate) {
-    _sendMessage({
+  void sendCandidate(RTCIceCandidate candidate, String to) {
+    _send({
       'type': 'candidate',
+      'to': to,
       'candidate': candidate.candidate,
       'sdpMid': candidate.sdpMid,
       'sdpMLineIndex': candidate.sdpMLineIndex,
     });
   }
 
-  void _sendMessage(Map<String, dynamic> message) {
-    _channel.sink.add(jsonEncode(message));
+  void _send(Map data) {
+    _channel.sink.add(jsonEncode(data));
   }
 
-  void close() {
-    _channel.sink.close();
-  }
+  void close() => _channel.sink.close();
 }

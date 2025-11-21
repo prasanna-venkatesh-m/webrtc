@@ -11,7 +11,7 @@ import 'mobile_capture_screen.dart';
 void main() {
   runApp(MaterialApp(
     home: MainApp(),
-    debugShowCheckedModeBanner: false,
+    debugShowCheckedModeBanner: true,
   ));
 }
 
@@ -20,8 +20,8 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // String url = 'ws://192.168.1.155:8888';
-    String url = 'wss://thin-jars-battle.loca.lt';
+    String url = 'ws://192.168.1.156:8888';
+    // String url = 'wss://stage-live-streaming.azurewebsites.net';
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(title: const Text('Live Streaming Demo')),
